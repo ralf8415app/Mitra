@@ -1,175 +1,39 @@
-'use strict';
-
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
-const $ = s => document.querySelector(s);
-
-const COLORS = ['#ef3e4a','#8c43df','#ff9f24','#2abf8a','#2f8be6','#f04fb8'];
-const DARK = ['#a91e2a','#552099','#b65d0c','#14775a','#1855a4','#9b226f'];
-
-const state = {
-  level: Math.max(1, Number(localStorage.getItem('dsr_level') || 1)),
-  speed: 1,
-  dragonY: 78,
-  dragonDir: 1,
-  dragonTimer: 0,
-  stones: [],
-  bullets: [],
-  particles: [],
-  aimX: 360,
-  aimY: 430,
-  dragging: false,
-  currentColor: 0,
-  nextColor: 1,
-  score: 0,
-  target: 10,
-  lives: 3,
-  shield: 0,
-  rainbow: 3,
-  bombs: 2,
-  running: true,
-  lastTime: performance.now(),
-  spawnTimer: 0,
-  shotCooldown: 0,
-  won: false
-};
-
-function resizeCanvas(){
-  const r = canvas.getBoundingClientRect();
-  const dpr = Math.min(2, window.devicePixelRatio || 1);
-  canvas.width = Math.max(1, Math.round(r.width*dpr));
-  canvas.height = Math.max(1, Math.round(r.height*dpr));
-  ctx.setTransform(dpr,0,0,dpr,0,0);
-}
-window.addEventListener('resize', resizeCanvas);
-
-function seeded(n){const x=Math.sin(n*12.9898+78.233)*43758.5453;return x-Math.floor(x)}
-function randColor(){return Math.floor(Math.random()*Math.min(COLORS.length,3+Math.floor(state.level/4)))}
-function levelTarget(){return Math.min(32,8+state.level*2)}
-
-function resetLevel(){
-  state.target=levelTarget(); state.score=0; state.lives=3; state.shield=0;
-  state.stones=[]; state.bullets=[]; state.particles=[]; state.dragonY=78; state.dragonDir=1;
-  state.currentColor=randColor(); state.nextColor=randColor(); state.spawnTimer=.5; state.shotCooldown=0;
-  state.running=true; state.won=false; updateHud(); hideModal();
-}
-
-function updateHud(){
-  $('#levelLabel').textContent=`Level ${state.level}`;
-  $('#progressLabel').textContent=`${Math.min(100,Math.round(state.score/state.target*100))}%`;
-  $('#nextBall').style.background=COLORS[state.nextColor];
-  $('#rainbowCount').textContent=state.rainbow;
-  $('#bombCount').textContent=state.bombs;
-  $('#shieldCount').textContent=state.shield;
-}
-
-function spawnStone(){
-  const w=canvas.clientWidth, maxColors=Math.min(COLORS.length,3+Math.floor(state.level/4));
-  const color=Math.floor(Math.random()*maxColors);
-  const radius=18+Math.random()*7;
-  const x=55+Math.random()*(w-110);
-  state.stones.push({x,y:state.dragonY+48,r:radius,color,hp:1,vy:34+state.level*2+Math.random()*18,wobble:Math.random()*6.28,dragged:true});
-}
-
-function shoot(x,y,forcedColor=null){
-  if(!state.running || state.shotCooldown>0) return;
-  const w=canvas.clientWidth,h=canvas.clientHeight;
-  const sx=w/2, sy=h-62;
-  let dx=x-sx,dy=y-sy; const len=Math.hypot(dx,dy)||1; dx/=len;dy/=len;
-  const color=forcedColor===null?state.currentColor:forcedColor;
-  state.bullets.push({x:sx,y:sy,vx:dx*500,vy:dy*500,r:12,color,rainbow:forcedColor===-1});
-  state.currentColor=state.nextColor; state.nextColor=randColor(); state.shotCooldown=.22; updateHud();
-}
-
-function burst(x,y,color,count=12){for(let i=0;i<count;i++){const a=Math.random()*Math.PI*2,s=45+Math.random()*110;state.particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.55+Math.random()*.35,color})}}
-
-function hitStone(b,s){
-  if(b.rainbow || b.color===s.color){
-    burst(s.x,s.y,COLORS[s.color]); state.score++; s.dead=true; b.dead=true; updateHud();
-    if(state.score>=state.target) win();
-  } else {
-    b.dead=true; s.vy+=35; flash('Falsche Farbe!');
-  }
-}
-
-function flash(text){const m=$('#message');m.textContent=text;m.classList.remove('hidden');clearTimeout(flash.t);flash.t=setTimeout(()=>m.classList.add('hidden'),700)}
-
-function update(dt){
-  if(!state.running) return;
-  const w=canvas.clientWidth,h=canvas.clientHeight;
-  state.shotCooldown=Math.max(0,state.shotCooldown-dt);
-  state.dragonTimer+=dt*state.speed;
-  state.dragonY += state.dragonDir*(16+state.level*.7)*dt*state.speed;
-  if(state.dragonY>125){state.dragonDir=-1}else if(state.dragonY<68){state.dragonDir=1}
-  state.spawnTimer-=dt*state.speed;
-  if(state.spawnTimer<=0){spawnStone();state.spawnTimer=Math.max(.55,1.45-state.level*.035)+Math.random()*.35}
-
-  for(const s of state.stones){
-    s.wobble+=dt*2.2; s.x+=Math.sin(s.wobble)*9*dt; s.y+=s.vy*dt*state.speed;
-    if(s.y>h-105 && !s.dead){
-      s.dead=true;
-      if(state.shield>0){state.shield--;flash('Schild schützt dich!')}else{state.lives--;flash(`Stein durchgekommen – ${state.lives} Leben`)}
-      updateHud(); if(state.lives<=0) lose();
-    }
-  }
-  for(const b of state.bullets){b.x+=b.vx*dt*state.speed;b.y+=b.vy*dt*state.speed;if(b.y<-30||b.x<-30||b.x>w+30)b.dead=true}
-  for(const b of state.bullets){if(b.dead)continue;for(const s of state.stones){if(s.dead)continue;const rr=b.r+s.r;if((b.x-s.x)**2+(b.y-s.y)**2<=rr*rr){hitStone(b,s);break}}}
-  for(const p of state.particles){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=170*dt;p.life-=dt}
-  state.stones=state.stones.filter(s=>!s.dead);state.bullets=state.bullets.filter(b=>!b.dead);state.particles=state.particles.filter(p=>p.life>0);
-}
-
-function drawBackground(w,h){
-  const g=ctx.createLinearGradient(0,0,0,h);g.addColorStop(0,'#65d5e9');g.addColorStop(.62,'#82dfed');g.addColorStop(.621,'#e4f5f9');g.addColorStop(1,'#f8fcfd');ctx.fillStyle=g;ctx.fillRect(0,0,w,h);
-  ctx.globalAlpha=.25;ctx.fillStyle='#fff';for(let i=0;i<18;i++){const x=(i*79+state.dragonTimer*10)%w,y=70+(i*47)%(h*.55);ctx.beginPath();ctx.arc(x,y,2+(i%3),0,Math.PI*2);ctx.fill()}ctx.globalAlpha=1;
-  ctx.font='38px serif';ctx.fillText('🪸',w*.12,h*.48);ctx.fillText('🐚',w*.77,h*.42);ctx.fillText('⭐',w*.66,h*.52);
-}
-
-function drawDragon(w){
-  const x=w/2,y=state.dragonY;
-  ctx.save();ctx.translate(x,y);ctx.shadowColor='rgba(0,0,0,.22)';ctx.shadowBlur=8;ctx.shadowOffsetY=5;
-  ctx.font='78px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('🐉',0,0);ctx.restore();
-  ctx.strokeStyle='rgba(91,49,35,.55)';ctx.lineWidth=5;for(const s of state.stones){if(s.dragged&&s.y<y+95){ctx.beginPath();ctx.moveTo(x,y+24);ctx.lineTo(s.x,s.y-s.r);ctx.stroke()}}
-}
-
-function drawStone(s){
-  const g=ctx.createRadialGradient(s.x-s.r*.35,s.y-s.r*.4,3,s.x,s.y,s.r);g.addColorStop(0,'#fff');g.addColorStop(.18,COLORS[s.color]);g.addColorStop(1,DARK[s.color]);ctx.fillStyle=g;ctx.beginPath();
-  for(let i=0;i<10;i++){const a=i/10*Math.PI*2,r=s.r*(i%2?0.88:1);const x=s.x+Math.cos(a)*r,y=s.y+Math.sin(a)*r;i?ctx.lineTo(x,y):ctx.moveTo(x,y)}ctx.closePath();ctx.fill();ctx.strokeStyle='rgba(255,255,255,.55)';ctx.lineWidth=2;ctx.stroke();
-}
-
-function drawLauncher(w,h){
-  const x=w/2,y=h-62;ctx.save();ctx.translate(x,y);ctx.fillStyle='#68748a';ctx.fillRect(-19,-30,38,48);ctx.fillStyle='#353b49';ctx.fillRect(-8,-52,16,32);ctx.fillStyle=COLORS[state.currentColor];ctx.beginPath();ctx.arc(0,-56,13,0,Math.PI*2);ctx.fill();ctx.strokeStyle='white';ctx.lineWidth=3;ctx.stroke();ctx.restore();
-  const dx=state.aimX-x,dy=state.aimY-y,len=Math.hypot(dx,dy)||1;ctx.save();ctx.setLineDash([8,9]);ctx.strokeStyle='rgba(255,255,255,.8)';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(x,y-48);ctx.lineTo(x+dx/len*160,y-48+dy/len*160);ctx.stroke();ctx.restore();
-}
-
-function draw(){
-  const w=canvas.clientWidth,h=canvas.clientHeight;ctx.clearRect(0,0,w,h);drawBackground(w,h);drawDragon(w);
-  for(const s of state.stones)drawStone(s);
-  for(const b of state.bullets){ctx.fillStyle=b.rainbow?'#fff':COLORS[b.color];ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fill();ctx.strokeStyle=b.rainbow?'#ff55c8':'white';ctx.lineWidth=3;ctx.stroke()}
-  for(const p of state.particles){ctx.globalAlpha=Math.max(0,p.life);ctx.fillStyle=p.color;ctx.fillRect(p.x,p.y,5,5)}ctx.globalAlpha=1;
-  drawLauncher(w,h);
-  ctx.fillStyle='rgba(38,61,77,.83)';ctx.font='bold 16px system-ui';ctx.textAlign='left';ctx.fillText(`❤️ ${state.lives}`,16,h-22);ctx.textAlign='right';ctx.fillText(`${state.score}/${state.target} Steine`,w-16,h-22);ctx.textAlign='start';
-}
-
-function loop(now){const dt=Math.min(.035,(now-state.lastTime)/1000);state.lastTime=now;update(dt);draw();requestAnimationFrame(loop)}
-
-function pointerPos(e){const r=canvas.getBoundingClientRect();const p=e.touches?e.touches[0]:e;return{x:p.clientX-r.left,y:p.clientY-r.top}}
-canvas.addEventListener('pointerdown',e=>{e.preventDefault();state.dragging=true;const p=pointerPos(e);state.aimX=p.x;state.aimY=p.y});
-canvas.addEventListener('pointermove',e=>{if(!state.dragging)return;e.preventDefault();const p=pointerPos(e);state.aimX=p.x;state.aimY=p.y});
-canvas.addEventListener('pointerup',e=>{if(!state.dragging)return;e.preventDefault();const p=pointerPos(e);state.aimX=p.x;state.aimY=p.y;state.dragging=false;shoot(p.x,p.y)});
-canvas.addEventListener('pointercancel',()=>state.dragging=false);
-
-function win(){if(state.won)return;state.won=true;state.running=false;localStorage.setItem('dsr_level',String(state.level+1));showModal('Level geschafft!',`<div class="big">🎉🐉</div><p>Alle farbigen Steine wurden abgeschossen.</p><button class="action" id="nextBtn">Nächstes Level</button>`);setTimeout(()=>{$('#nextBtn').onclick=()=>{state.level++;resetLevel()}},0)}
-function lose(){state.running=false;showModal('Level verloren',`<div class="big">💥</div><p>Zu viele Steine sind unten angekommen.</p><button class="action" id="retryBtn">Noch einmal</button>`);setTimeout(()=>{$('#retryBtn').onclick=resetLevel},0)}
-function showModal(title,html){$('#modalTitle').textContent=title;$('#modalContent').innerHTML=html;$('#modal').classList.remove('hidden')}
-function hideModal(){$('#modal').classList.add('hidden')}
-
-$('#closeModal').onclick=()=>{hideModal();state.running=true};
-$('#settingsBtn').onclick=()=>{state.running=false;showModal('Spielanleitung',`<div class="help"><p><b>Ziel:</b> Der Drache steigt herab und lässt farbige Steine fallen.</p><p>Ziehe auf dem Spielfeld zum Zielen und lasse los. Nur eine Kugel derselben Farbe zerstört den Stein.</p><p>🌈 trifft jede Farbe, 💣 zerstört mehrere Steine, 🛡️ hält einen durchgekommenen Stein ab.</p></div><button class="action" id="resetBtn">Fortschritt löschen</button>`)};
-$('#speedBtn').onclick=()=>{state.speed=state.speed===1?2:1;$('#speedBtn').textContent=`⏩ x${state.speed}`};
-$('#rainbowBtn').onclick=()=>{if(state.rainbow>0&&state.running){state.rainbow--;shoot(state.aimX,state.aimY,-1);updateHud()}};
-$('#bombBtn').onclick=()=>{if(state.bombs>0&&state.running&&state.stones.length){state.bombs--;const victims=[...state.stones].sort((a,b)=>b.y-a.y).slice(0,4);for(const s of victims){s.dead=true;state.score++;burst(s.x,s.y,COLORS[s.color],18)}updateHud();if(state.score>=state.target)win()}};
-$('#shieldBtn').onclick=()=>{if(state.shield<3){state.shield++;updateHud();flash('Schild aktiviert')}};
-document.addEventListener('click',e=>{if(e.target?.id==='resetBtn'){localStorage.removeItem('dsr_level');state.level=1;resetLevel()}});
-
-if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js').catch(()=>{})}
-resizeCanvas();resetLevel();requestAnimationFrame(t=>{state.lastTime=t;requestAnimationFrame(loop)});
+"use strict";
+const c=document.getElementById('game'),x=c.getContext('2d'),$=s=>document.querySelector(s);
+const COLORS=['#ef3949','#8a42de','#ff9224','#20b777','#2389e8','#19c7c8'];
+const DARK=['#a51524','#54208f','#b95a0b','#0d7450','#1555a6','#087c80'];
+const DIRS=[{dx:0,dy:-1,ch:'↑'},{dx:1,dy:0,ch:'→'},{dx:0,dy:1,ch:'↓'},{dx:-1,dy:0,ch:'←'}];
+const S={level:+localStorage.dyr_level||1,speed:1,blocks:[],shots:[],fx:[],dragonX:70,dragonDir:1,dragonDrop:2.6,cleared:0,target:16,lives:3,yarn:20,spools:[0,0,0,0],caps:[4,4,4,4],hammer:3,shuffle:2,rainbow:2,running:true,last:performance.now(),shake:0,flash:0};
+function W(){return c.clientWidth} function H(){return c.clientHeight}
+function resize(){const r=c.getBoundingClientRect(),d=Math.min(2,devicePixelRatio||1);c.width=Math.round(r.width*d);c.height=Math.round(r.height*d);x.setTransform(d,0,0,d,0,0)} addEventListener('resize',resize);
+function rng(n){const v=Math.sin(n*999.13+S.level*77.7)*43758.5;return v-Math.floor(v)}
+function rand(n){return Math.floor(Math.random()*n)}
+function reset(){S.blocks=[];S.shots=[];S.fx=[];S.cleared=0;S.target=Math.min(34,14+S.level*2);S.lives=3;S.yarn=S.target;S.spools=[0,0,0,0];S.caps=[4,4,4,4].map(v=>v+Math.floor(S.level/6));S.dragonDrop=2.2;S.running=true;S.hammer=3;S.shuffle=2;S.rainbow=2;makeBoard();hud();hide();}
+function makeBoard(){const w=W(),top=H()*.49,bottom=H()-35,cols=7,rows=Math.min(7,4+Math.floor(S.level/2)),bw=Math.min(46,(w-42)/cols),bh=34;let id=0;for(let r=0;r<rows;r++)for(let q=0;q<cols;q++){if(Math.random()<.2&&r>0)continue;const col=rand(4),dir=rand(4),locked=(r<2&&Math.random()<Math.min(.32,S.level*.025));S.blocks.push({id:id++,x:21+q*((w-42)/cols)+(bw/2),y:top+r*((bottom-top-20)/rows)+bh/2,w:bw-4,h:bh,color:col,dir,locked,need:locked?1+rand(3):0,dead:false,shake:0});}while(S.blocks.length<S.target+5){const q=rand(cols),r=rand(rows);S.blocks.push({id:id++,x:21+q*((w-42)/cols)+bw/2,y:top+r*((bottom-top-20)/rows)+bh/2,w:bw-4,h:bh,color:rand(4),dir:rand(4),locked:false,need:0,dead:false,shake:0});}}
+function hud(){$('#level').textContent='Level '+S.level;$('#progress').textContent=Math.round(S.cleared/S.target*100)+' %';$('#hammerN').textContent=S.hammer;$('#shuffleN').textContent=S.shuffle;$('#rainbowN').textContent=S.rainbow;$('#spools').innerHTML=S.spools.map((n,i)=>`<div class="spool"><div class="thread" style="background:${COLORS[i]}"></div><span>${n}/${S.caps[i]}</span></div>`).join('')}
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),850)}
+function clearPath(b){const d=DIRS[b.dir];for(const o of S.blocks){if(o.dead||o===b)continue;const ax=Math.abs(o.x-b.x),ay=Math.abs(o.y-b.y);if(d.dx!==0&&ay<(b.h+o.h)*.43&&Math.sign(o.x-b.x)===d.dx&&ax<W()*.35)return false;if(d.dy!==0&&ax<(b.w+o.w)*.43&&Math.sign(o.y-b.y)===d.dy&&ay<H()*.32)return false;}return true}
+function shootBlock(b,force=false){if(!S.running||b.dead)return;if(b.locked&&!force){b.shake=.35;toast('🔒 Erst '+b.need+' Stein'+(b.need>1?'e':'')+' entfernen');return}if(!force&&!clearPath(b)){b.shake=.35;toast('Weg blockiert');return}if(!force&&S.spools[b.color]>=S.caps[b.color]){b.shake=.35;toast('Spule voll – andere Farbe zuerst');return}const sx=W()/2,sy=H()*.46;S.shots.push({x:sx,y:sy,tx:b.x,ty:b.y,t:0,color:b.color,block:b,force});b.dead=true;}
+function finishShot(s){const b=s.block;S.cleared++;if(!s.force)S.spools[b.color]++;S.yarn=Math.max(0,S.yarn-1);burst(b.x,b.y,COLORS[b.color]);for(const q of S.blocks)if(!q.dead&&q.locked){q.need--;if(q.need<=0){q.locked=false;burst(q.x,q.y,'#ffd02c',8)}}hud();if(S.cleared>=S.target)win();}
+function burst(px,py,col,n=13){for(let i=0;i<n;i++){const a=Math.random()*6.28,v=35+Math.random()*120;S.fx.push({x:px,y:py,vx:Math.cos(a)*v,vy:Math.sin(a)*v,life:.6+Math.random()*.4,col})}}
+function dragonDrop(){const alive=S.blocks.filter(b=>!b.dead);if(alive.length>S.target-S.cleared+11){S.lives--;toast('🐉 Zu viele Steine! ❤️ '+S.lives);if(S.lives<=0)lose();return}const cols=7,q=rand(cols),top=H()*.51,bw=Math.min(46,(W()-42)/cols);S.blocks.push({id:Date.now(),x:21+q*((W()-42)/cols)+bw/2,y:top,w:bw-4,h:34,color:rand(4),dir:rand(4),locked:false,need:0,dead:false,shake:0});}
+function update(dt){if(!S.running)return;S.dragonX+=S.dragonDir*(55+S.level*2)*dt*S.speed;if(S.dragonX>W()-65)S.dragonDir=-1;if(S.dragonX<65)S.dragonDir=1;S.dragonDrop-=dt*S.speed;if(S.dragonDrop<=0){dragonDrop();S.dragonDrop=Math.max(1.5,3.4-S.level*.07)}for(const b of S.blocks)b.shake=Math.max(0,b.shake-dt);for(const s of S.shots){s.t+=dt*4*S.speed;const t=Math.min(1,s.t),e=1-Math.pow(1-t,3);s.x=(W()/2)+(s.tx-W()/2)*e;s.y=(H()*.46)+(s.ty-H()*.46)*e;if(t>=1&&!s.done){s.done=true;finishShot(s)}}S.shots=S.shots.filter(s=>!s.done);for(const p of S.fx){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=140*dt;p.life-=dt}S.fx=S.fx.filter(p=>p.life>0)}
+function bg(){const w=W(),h=H(),split=h*.47;let g=x.createLinearGradient(0,0,0,split);g.addColorStop(0,'#60d6ec');g.addColorStop(1,'#8de5ef');x.fillStyle=g;x.fillRect(0,0,w,split);x.fillStyle='#f0f1f3';x.fillRect(0,split,w,h-split);x.globalAlpha=.18;x.fillStyle='#fff';for(let i=0;i<14;i++){x.beginPath();x.arc((i*73+S.dragonX*.1)%w,70+(i*41)%(split-90),2+i%3,0,7);x.fill()}x.globalAlpha=1}
+function yarnTrack(){const w=W(),h=H(),split=h*.47,segments=Math.max(1,S.yarn),pts=[];for(let i=0;i<=30;i++){const t=i/30,px=45+t*(w-90),py=split*.69+Math.sin(t*5.4)*50;pts.push([px,py])}x.lineCap='round';x.lineJoin='round';x.lineWidth=22;x.strokeStyle='#dce6e9';x.beginPath();pts.forEach((p,i)=>i?x.lineTo(...p):x.moveTo(...p));x.stroke();for(let i=0;i<segments;i++){const a=pts[Math.floor(i/Math.max(1,S.target)*29)],b=pts[Math.min(30,Math.floor((i+1)/Math.max(1,S.target)*29)+1)];x.strokeStyle=COLORS[i%4];x.lineWidth=18;x.beginPath();x.moveTo(...a);x.lineTo(...b);x.stroke()}x.font='38px serif';x.textAlign='center';x.fillText('🐱',w/2,split*.52);x.font='24px serif';x.fillText('❤️'.repeat(Math.max(0,S.lives)),w/2,split*.39);x.font='29px serif';x.fillText('🎁',w-48,split*.71)}
+function dragon(){x.save();x.translate(S.dragonX,77);x.font='64px serif';x.textAlign='center';x.fillText('🐉',0,0);x.restore();x.strokeStyle='#673b2b88';x.lineWidth=4;x.beginPath();x.moveTo(S.dragonX,100);x.lineTo(S.dragonX,H()*.48);x.stroke()}
+function roundRect(cx,cy,w,h,r){x.beginPath();x.roundRect(cx-w/2,cy-h/2,w,h,r)}
+function block(b){if(b.dead)return;const sh=b.shake?Math.sin(b.shake*65)*6:0;x.save();x.translate(sh,0);x.shadowColor='#0004';x.shadowBlur=5;x.shadowOffsetY=3;roundRect(b.x,b.y,b.w,b.h,7);let g=x.createLinearGradient(0,b.y-b.h/2,0,b.y+b.h/2);g.addColorStop(0,COLORS[b.color]);g.addColorStop(1,DARK[b.color]);x.fillStyle=b.locked?'#25282d':g;x.fill();x.lineWidth=2;x.strokeStyle='#fff8';x.stroke();x.shadowColor='transparent';x.fillStyle='#fff';x.font='bold 24px system-ui';x.textAlign='center';x.textBaseline='middle';x.fillText(b.locked?'🔒'+Math.max(0,b.need):DIRS[b.dir].ch,b.x,b.y+1);x.restore()}
+function cannon(){const px=W()/2,py=H()*.46;x.save();x.translate(px,py);x.fillStyle='#444a5b';roundRect(0,0,44,44,9);x.fill();x.fillStyle='#697286';x.fillRect(-8,-31,16,34);x.fillStyle='#ffd33d';x.beginPath();x.arc(0,-34,9,0,7);x.fill();x.restore()}
+function draw(){x.clearRect(0,0,W(),H());bg();yarnTrack();dragon();cannon();for(const b of S.blocks)block(b);for(const s of S.shots){x.strokeStyle='#ffffffbb';x.lineWidth=3;x.beginPath();x.moveTo(W()/2,H()*.46);x.lineTo(s.x,s.y);x.stroke();x.fillStyle=COLORS[s.color];x.beginPath();x.arc(s.x,s.y,9,0,7);x.fill()}for(const p of S.fx){x.globalAlpha=Math.max(0,p.life);x.fillStyle=p.col;x.fillRect(p.x,p.y,5,5)}x.globalAlpha=1;x.fillStyle='#536a78';x.font='bold 13px system-ui';x.textAlign='left';x.fillText('Ziel: '+S.cleared+'/'+S.target,12,H()-10);x.textAlign='right';x.fillText('Drache in '+Math.ceil(S.dragonDrop)+'s',W()-12,H()-10)}
+function loop(t){const dt=Math.min(.034,(t-S.last)/1000);S.last=t;update(dt);draw();requestAnimationFrame(loop)}
+function pos(e){const r=c.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}}
+c.addEventListener('pointerdown',e=>{e.preventDefault();const p=pos(e);const hit=S.blocks.filter(b=>!b.dead&&Math.abs(p.x-b.x)<b.w*.65&&Math.abs(p.y-b.y)<b.h*.7).sort((a,b)=>Math.hypot(p.x-a.x,p.y-a.y)-Math.hypot(p.x-b.x,p.y-b.y))[0];if(hit)shootBlock(hit)});
+$('#hammer').onclick=()=>{if(!S.running||S.hammer<=0)return;const b=S.blocks.filter(b=>!b.dead).sort((a,b)=>b.y-a.y)[0];if(b){S.hammer--;shootBlock(b,true);hud()}};
+$('#shuffle').onclick=()=>{if(!S.running||S.shuffle<=0)return;S.shuffle--;const alive=S.blocks.filter(b=>!b.dead);const places=alive.map(b=>[b.x,b.y]).sort(()=>Math.random()-.5);alive.forEach((b,i)=>{b.x=places[i][0];b.y=places[i][1];b.dir=rand(4)});hud();toast('Steine gemischt')};
+$('#rainbow').onclick=()=>{if(!S.running||S.rainbow<=0)return;S.rainbow--;for(let i=0;i<4;i++){const b=S.blocks.find(b=>!b.dead&&b.color===i);if(b)shootBlock(b,true)}hud()};
+$('#speed').onclick=()=>{S.speed=S.speed===1?2:1;$('#speed').textContent='⏩ x'+S.speed};
+$('#settings').onclick=()=>{S.running=false;show('Spielanleitung',`<div class="help"><p><b>Ziel:</b> Befreie die Katze, indem du die farbigen Garnsegmente entfernst.</p><p>Tippe einen Pfeilstein an. Er kann nur abgeschossen werden, wenn sein Pfeilweg frei ist. Der Drache wirft regelmäßig neue Steine ab.</p><p>Volle Farbspulen müssen durch andere Farben entlastet werden. Schwarze Steine entsperren sich nach weiteren Treffern.</p><p>🔨 zerstört einen Stein, 🔀 mischt das Feld, 🌈 entfernt bis zu vier Farben.</p></div><button class="action" id="restart">Level neu starten</button>`)};
+$('#close').onclick=()=>{hide();S.running=true};document.addEventListener('click',e=>{if(e.target.id==='restart')reset();if(e.target.id==='next'){S.level++;localStorage.dyr_level=S.level;reset()}if(e.target.id==='retry')reset()});
+function show(t,b){$('#modalTitle').textContent=t;$('#modalBody').innerHTML=b;$('#modal').classList.remove('hidden')}function hide(){$('#modal').classList.add('hidden')}
+function win(){S.running=false;localStorage.dyr_level=S.level+1;show('Level geschafft!',`<div class="big">🎉🐱🐉</div><p>Die Katze ist gerettet.</p><button class="action" id="next">Nächstes Level</button>`)}function lose(){S.running=false;show('Level verloren',`<div class="big">💥</div><p>Der Drache hat das Feld überfüllt.</p><button class="action" id="retry">Noch einmal</button>`)}
+if('serviceWorker'in navigator)navigator.serviceWorker.register('./sw.js').catch(()=>{});resize();reset();requestAnimationFrame(t=>{S.last=t;requestAnimationFrame(loop)});

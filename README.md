@@ -1,18 +1,8 @@
-# Dragon Stone Rescue
+# Dragon Yarn Rescue V3
 
-Eigenständiges Browser-Spiel für GitHub Pages.
+Eigenständiges HTML5-Puzzlespiel für GitHub Pages.
 
-## Spiel
-- Der Drache bewegt sich von oben herab und lässt farbige Steine fallen.
-- Auf das Spielfeld drücken, zielen und loslassen.
-- Kugel und Stein müssen dieselbe Farbe haben.
-- Booster: Regenbogen, Bombe und Schild.
-- Fortschritt und Level werden lokal gespeichert.
+## Start
+Alle Dateien in die Hauptwurzel eines GitHub-Repositories hochladen. Danach unter **Settings → Pages → Deploy from a branch → main / root** aktivieren.
 
-## GitHub Pages
-1. Alle Dateien aus diesem Ordner in ein GitHub-Repository hochladen.
-2. **Settings → Pages** öffnen.
-3. **Deploy from a branch** auswählen.
-4. Branch **main**, Ordner **/(root)** wählen und speichern.
-
-Danach läuft das Spiel direkt im Browser auf Smartphone, Tablet und PC.
+Das Spiel funktioniert per Touch und Maus und kann nach dem ersten Laden offline genutzt werden.
