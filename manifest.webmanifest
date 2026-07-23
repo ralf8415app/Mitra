@@ -1,11 +1,1 @@
-{
-  "name":"Yarn Rescue",
-  "short_name":"YarnRescue",
-  "start_url":"./",
-  "display":"standalone",
-  "background_color":"#dff4fb",
-  "theme_color":"#67d7ed",
-  "icons":[
-    {"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
-  ]
-}
+{"name":"Dragon Stone Rescue","short_name":"Dragon Rescue","start_url":"./","display":"standalone","background_color":"#e9f8fb","theme_color":"#66d6ea","icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]}

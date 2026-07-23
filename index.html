@@ -3,57 +3,45 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no" />
-  <meta name="theme-color" content="#7ad7ef" />
-  <title>Yarn Rescue</title>
+  <meta name="theme-color" content="#66d6ea" />
+  <title>Dragon Stone Rescue</title>
   <link rel="manifest" href="manifest.webmanifest" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="app">
+  <main id="app">
     <header class="hud">
-      <button id="settingsBtn" class="round">⚙</button>
-      <div class="stats"><strong id="levelLabel">Level 1</strong><span><span class="rainbow">◉</span> <span id="progressLabel">0%</span></span></div>
+      <button id="settingsBtn" class="round" aria-label="Einstellungen">⚙</button>
+      <div class="stats">
+        <strong id="levelLabel">Level 1</strong>
+        <span>Fortschritt: <b id="progressLabel">0%</b></span>
+      </div>
       <button id="speedBtn" class="pill">⏩ x1</button>
     </header>
 
-    <section class="aquarium" aria-label="Spielfeld">
-      <svg id="pathSvg" viewBox="0 0 1000 600" preserveAspectRatio="none" aria-hidden="true">
-        <path id="track" d="M80,460 C120,210 270,120 390,200 C510,290 420,430 560,430 C680,430 650,160 820,190 C930,215 930,370 850,410" />
-      </svg>
-      <div class="sea-decor shell">🐚</div>
-      <div class="sea-decor coral">🪸</div>
-      <div class="sea-decor star">⭐</div>
-      <div id="cat" class="cat" aria-label="Katze">
-        <div class="hearts" id="hearts">❤️🤍🤍</div>
-        <div class="cat-face">🐱</div>
+    <section class="game-wrap">
+      <canvas id="gameCanvas" width="720" height="940" aria-label="Spiel"></canvas>
+      <div id="message" class="message hidden"></div>
+    </section>
+
+    <section class="launcher-panel">
+      <div class="next-row">
+        <span>Nächste Kugel</span>
+        <div id="nextBall" class="preview-ball"></div>
       </div>
-      <div id="ropeLayer"></div>
-      <div id="fish" class="fish">🐠</div>
+      <div class="instructions">Zielen: Feld antippen · Schießen: loslassen · Gleiche Farbe trifft</div>
+      <div class="boosters">
+        <button id="rainbowBtn">🌈 <b id="rainbowCount">3</b></button>
+        <button id="bombBtn">💣 <b id="bombCount">2</b></button>
+        <button id="shieldBtn">🛡️ <b id="shieldCount">1</b></button>
+      </div>
     </section>
-
-    <section class="buffer">
-      <div id="slots" class="slots"></div>
-      <button id="vipBtn" class="vip">V.I.P. ＋</button>
-    </section>
-
-    <section class="factory">
-      <div id="spools" class="spools"></div>
-      <div id="machines" class="machines"></div>
-      <div id="controls" class="controls"></div>
-    </section>
-
-    <footer class="boosters">
-      <button data-boost="hammer">🔨<span>+</span></button>
-      <button data-boost="target">🎯<span id="targetCount">1</span></button>
-      <button data-boost="shuffle">🔀<span>+</span></button>
-      <button data-boost="rainbow">🧶<span id="rainbowCount">3</span></button>
-    </footer>
-  </div>
+  </main>
 
   <div id="modal" class="modal hidden">
     <div class="modal-card">
-      <button id="closeModal" class="close">×</button>
-      <h2 id="modalTitle">Yarn Rescue</h2>
+      <button id="closeModal" class="close" aria-label="Schließen">×</button>
+      <h2 id="modalTitle"></h2>
       <div id="modalContent"></div>
     </div>
   </div>
