@@ -3,30 +3,32 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<meta name="theme-color" content="#65d7ef">
-<title>Dragon Yarn Rescue V3</title>
+<meta name="theme-color" content="#58d9ef">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Dragon Yarn Rescue V4</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <main id="app">
+  <canvas id="game" aria-label="Dragon Yarn Rescue"></canvas>
   <header class="hud">
-    <button id="settings" class="round">⚙️</button>
-    <div class="levelbox"><b id="level">Level 1</b><span id="progress">0 %</span></div>
+    <button id="settings" class="round" aria-label="Einstellungen">⚙️</button>
+    <div class="levelbox"><b id="level">Level 1</b><span><i id="ring"></i><em id="progress">0 %</em></span></div>
     <button id="speed" class="speed">⏩ x1</button>
   </header>
-  <canvas id="game" aria-label="Dragon Yarn Rescue"></canvas>
-  <section class="toolbar">
+  <section class="dock">
     <div class="spools" id="spools"></div>
     <div class="boosters">
-      <button id="hammer">🔨 <b id="hammerN">3</b></button>
-      <button id="shuffle">🔀 <b id="shuffleN">2</b></button>
-      <button id="rainbow">🌈 <b id="rainbowN">2</b></button>
+      <button id="hammer"><span>🔨</span><b id="hammerN">3</b><small>Hammer</small></button>
+      <button id="shuffle"><span>🔀</span><b id="shuffleN">2</b><small>Mischen</small></button>
+      <button id="rainbow"><span>🌈</span><b id="rainbowN">2</b><small>Farbe</small></button>
     </div>
-    <div class="tip">Tippe einen freien Pfeilstein an. Die Kanone schießt ihn automatisch ab.</div>
   </section>
 </main>
 <div id="toast"></div>
+<div id="rotate"><div>📱<br><b>Bitte hochkant halten</b></div></div>
 <div id="modal" class="hidden"><div class="card"><button id="close">×</button><h2 id="modalTitle"></h2><div id="modalBody"></div></div></div>
 <script src="game.js"></script>
 </body>

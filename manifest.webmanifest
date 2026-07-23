@@ -1,1 +1,1 @@
-{"name":"Dragon Yarn Rescue","short_name":"Dragon Yarn","start_url":"./","display":"standalone","background_color":"#ffffff","theme_color":"#65d7ef","icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml"}]}
+{"name":"Dragon Yarn Rescue V4","short_name":"Dragon Rescue","start_url":"./","display":"standalone","orientation":"portrait","background_color":"#58d9ef","theme_color":"#58d9ef","icons":[{"src":"icon.svg","sizes":"any","type":"image/svg+xml"}]}
