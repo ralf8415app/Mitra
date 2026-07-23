@@ -1,68 +1,21 @@
-# Color Traffic Puzzle V3
+# Yarn Rescue – private GitHub version
 
-Browser- und PWA-Spiel für GitHub Pages.
+Eigenständiges, werbefreies Browser-Puzzlespiel, inspiriert vom gezeigten Spielprinzip. Keine Originalgrafiken, Markennamen oder kopierten Assets.
 
-## Funktionen
+## GitHub Pages
+1. Neues Repository erstellen.
+2. Alle Dateien aus diesem Ordner hochladen.
+3. **Settings → Pages** öffnen.
+4. Unter **Build and deployment**: `Deploy from a branch` wählen.
+5. Branch `main`, Ordner `/root`, dann **Save**.
 
-- 150 Level
-- automatische lokale Speicherung
-- Level-Freischaltung
-- Sterne-System
-- Rückgängig-Funktion
-- Hinweis-Funktion
-- Ton an/aus
-- offline spielbar
-- für iPhone, iPad, Android, Windows und Desktop-Browser
-- PWA-Installation über den Browser
+Nach wenigen Minuten ist das Spiel über die GitHub-Pages-Adresse erreichbar.
 
-## GitHub Pages veröffentlichen
-
-1. Auf GitHub ein neues Repository anlegen.
-2. Alle Dateien aus diesem Ordner direkt in das Repository hochladen.
-3. In GitHub **Settings → Pages** öffnen.
-4. Unter **Build and deployment**:
-   - Source: **Deploy from a branch**
-   - Branch: **main**
-   - Folder: **/(root)**
-5. Speichern.
-6. Nach kurzer Zeit ist das Spiel unter der GitHub-Pages-Adresse erreichbar.
-
-## Lokal testen
-
-Wegen des Service Workers sollte das Projekt über einen lokalen Webserver gestartet werden.
-
-Mit Python:
-
-```bash
-python -m http.server 8080
-```
-
-Dann im Browser öffnen:
-
-```text
-http://localhost:8080
-```
+## Lokal starten
+`index.html` im Browser öffnen. Für Offline-/PWA-Funktion besser über GitHub Pages oder einen lokalen Webserver starten.
 
 ## Steuerung
-
-- Auto antippen: Auto fährt in Pfeilrichtung
-- **Rückgängig**: letzten Zug zurücknehmen
-- **Hinweis**: freies Auto markieren
-- **Neustart**: aktuelles Level neu beginnen
-- Tastatur:
-  - `R`: Neustart
-  - `H`: Hinweis
-  - `Strg/Cmd + Z`: Rückgängig
-
-## Technik
-
-- HTML5
-- CSS3
-- Vanilla JavaScript
-- LocalStorage
-- Service Worker
-- Web App Manifest
-
-## Lizenz
-
-MIT
+- Garnrolle antippen: in Ablage legen.
+- Linke/rechte Maschine antippen: passende Farbe verarbeiten.
+- Booster unten: Leben, Sortierhilfe, Mischen und Fortschrittsbonus.
+- Fortschritt wird lokal im Browser gespeichert.

@@ -1,10 +1,1 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-<defs><linearGradient id="g" x1="0" x2="1" y1="0" y2="1"><stop stop-color="#2d7ef7"/><stop offset="1" stop-color="#7b4ee8"/></linearGradient></defs>
-<rect width="512" height="512" rx="110" fill="url(#g)"/>
-<rect x="76" y="190" width="360" height="150" rx="48" fill="#fff"/>
-<path d="M135 195l48-70h146l55 70" fill="#fff"/>
-<circle cx="155" cy="345" r="42" fill="#142033"/>
-<circle cx="357" cy="345" r="42" fill="#142033"/>
-<path d="M210 265h95" stroke="#2d7ef7" stroke-width="26" stroke-linecap="round"/>
-<path d="M285 230l42 35-42 35" fill="none" stroke="#2d7ef7" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="96" fill="#67d7ed"/><circle cx="256" cy="260" r="145" fill="#ffbd25"/><text x="256" y="310" text-anchor="middle" font-size="210">🐱</text><path d="M70 420c110-90 260-90 372 0" fill="none" stroke="#8d1bb5" stroke-width="45" stroke-linecap="round"/></svg>

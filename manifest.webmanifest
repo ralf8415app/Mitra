@@ -1,23 +1,11 @@
 {
-  "name": "Color Traffic Puzzle V3",
-  "short_name": "Traffic V3",
-  "start_url": "./",
-  "scope": "./",
-  "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#edf2f7",
-  "theme_color": "#ffffff",
-  "description": "Ein farbiges Logikspiel mit Autos und Fahrg\u00e4sten.",
-  "icons": [
-    {
-      "src": "./assets/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "./assets/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
-    }
+  "name":"Yarn Rescue",
+  "short_name":"YarnRescue",
+  "start_url":"./",
+  "display":"standalone",
+  "background_color":"#dff4fb",
+  "theme_color":"#67d7ed",
+  "icons":[
+    {"src":"icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}
   ]
 }
